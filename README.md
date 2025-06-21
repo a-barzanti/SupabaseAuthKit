@@ -1,6 +1,6 @@
 # SupabaseAuthKit
 
-Next.js + TypeScript + Supabase starter kit — built-in authentication, role-based access control (RBAC), and user management.
+Next.js + Supabase + TypeScript starter with built-in authentication, RBAC, protected routes, admin panel. API-first and SSR-ready.
 
 ## 🚀 Features
 
