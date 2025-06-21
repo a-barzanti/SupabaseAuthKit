@@ -1,3 +1,7 @@
+![MIT License](https://img.shields.io/github/license/a-barzanti/SupabaseAuthKit)
+![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
+![Built with pnpm](https://img.shields.io/badge/built%20with-pnpm-blueviolet)
+
 # SupabaseAuthKit
 
 Next.js + Supabase + TypeScript starter with built-in authentication, RBAC, protected routes, admin panel. API-first and SSR-ready.
