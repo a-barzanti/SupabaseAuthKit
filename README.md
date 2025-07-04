@@ -13,7 +13,7 @@ Next.js + Supabase + TypeScript starter with built-in authentication, RBAC, prot
 - Supabase Auth (email/password login, OAuth ready)
 - Role-based access control (via [RLS](https://supabase.com/docs/guides/database/postgres/custom-claims-and-role-based-access-control-rbac))
 - Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/) This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+- Components with [shadcn/ui](https://ui.shadcn.com/). This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
 - SSR-compatible (via @supabase/ssr)
 - Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
 - Protected routes & middleware
