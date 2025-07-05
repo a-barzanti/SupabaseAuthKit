@@ -9,7 +9,8 @@
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
     "supabase:reset": "supabase stop && rm -rf supabase/.temp && supabase start",
-    "supabase:studio": "open http://localhost:54323"
+    "supabase:studio": "open http://localhost:54323",
+    "envupdate": "bash ./scripts/update-env.sh"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.1",
