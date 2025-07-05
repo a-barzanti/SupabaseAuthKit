@@ -4,7 +4,7 @@ set -euo pipefail
 echo "🔧 Starting local Supabase..."
 
 temp_file=$(mktemp)
-supabase start | tee "$temp_file"
+pnpm supabase:start | tee "$temp_file"
 
 SUPABASE_URL=$(grep "API URL:" "$temp_file" | awk '{print $3}')
 SUPABASE_KEY=$(grep "anon key:" "$temp_file" | awk '{print $3}')
