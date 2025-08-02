@@ -33,6 +33,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <h1>Root Layout</h1>
           {children}
         </ThemeProvider>
       </body>

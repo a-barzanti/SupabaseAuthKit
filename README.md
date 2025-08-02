@@ -38,3 +38,7 @@ Next.js + Supabase + TypeScript starter with built-in authentication, RBAC, prot
    ```
 
    The template app should now be running on [localhost:3000](http://localhost:3000/).
+
+## Enable Auth hook
+
+In the dashboard, navigate to `Authentication > Hooks` and select the appropriate function type (SQL or HTTP) from the dropdown menu.
