@@ -43,7 +43,8 @@ export async function GetAuthUser(): Promise<AuthUser> {
 
   // In case the role changes and the JWT claim is not valid anymore this flag on the profile will log out the user
   if (!profile.jwtValid) {
-    // here we should revalidate the JWT via query
+    // Set jwtValid to true before signing out the user
+    await supabase.from('profiles').update({ jwtValid: true }).eq('id', data.user.id);
     supabase.auth.signOut();
   }
   return { ...data.user, profile, role: role };
