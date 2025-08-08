@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/server';
 
-type UserRole = 'user' | 'admim';
+type UserRole = 'user' | 'admin';
 
 type AuthUser = UserResponse['data']['user'] & {
   profile: {

@@ -4,7 +4,7 @@
 
 - [x] Email/password authentication
 - [x] Profile page (SSR)
-- [ ] RBAC with Supabase RLS
+- [x] RBAC with Supabase RLS
 - [ ] Unit tests & integration tests
 - [ ] Admin panel MVP (users + roles)
 - [x] Protected routes

@@ -5,7 +5,7 @@ create type public.app_role as enum ('admin', 'user');
 -- Profiles Table
 create table public.profiles (
   id          uuid primary key references auth.users(id) on delete cascade not null, -- UUID from auth.users
-  username    text
+  username    text,
   jwt_valid   boolean not null default true
 );
 comment on table public.profiles is 'Profile data for each user.';
