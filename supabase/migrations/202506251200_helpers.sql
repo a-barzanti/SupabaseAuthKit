@@ -24,11 +24,6 @@ begin
     raise exception 'User % does not have an existing role to update', p_user_id;
   end if;
 
-  -- Set jwtValid to false in profiles table
-  update public.profiles
-  set jwt_valid = false
-  where id = p_user_id;
-
   return p_role;
 end;
 $$ language plpgsql security definer set search_path = '';

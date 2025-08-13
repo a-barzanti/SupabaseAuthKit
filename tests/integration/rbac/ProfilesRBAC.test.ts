@@ -114,10 +114,10 @@ describe('Profiles RBAC with RLS', () => {
       await client.auth.signOut();
 
       // Try to get any profile (should fail)
-      const { data: profile, error } = await client.from('profiles').select('*').limit(1);
+      const { data } = await client.from('profiles').select('*').limit(1);
 
-      expect(error).toBeTruthy();
-      expect(profile).toBeNull();
+      // Empty Data, No error https://github.com/supabase/supabase/issues/30190
+      expect(data?.length).toBe(0);
     });
   });
 
@@ -194,7 +194,7 @@ describe('Profiles RBAC with RLS', () => {
   });
 
   describe('Profile Delete Access', () => {
-    it('allows users to delete their own profile', async () => {
+    it('prevents users to delete their own profile', async () => {
       // Sign in as alice
       const { error: signInError } = await client.auth.signInWithPassword({
         email: 'alice@example.com',
@@ -204,41 +204,24 @@ describe('Profiles RBAC with RLS', () => {
 
       const userId = (await client.auth.getUser()).data.user!.id;
 
-      // Create a temporary profile for testing deletion
-      const serviceClient = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      );
+      const { data: deletedProfile } = await client.from('profiles').delete().eq('id', userId);
 
-      // Create a test user and profile
-      const { data: testUser } = await serviceClient.auth.admin.createUser({
-        email: 'test-delete@example.com',
-        password: 'Passw0rd!',
-        email_confirm: true,
-      });
+      // Null Data, No error https://github.com/supabase/supabase/issues/30190
+      expect(deletedProfile).toBeNull();
 
-      if (testUser.user) {
-        // Sign in as the test user
-        await client.auth.signOut();
-        const { error: testSignInError } = await client.auth.signInWithPassword({
-          email: 'test-delete@example.com',
-          password: 'Passw0rd!',
-        });
-        expect(testSignInError).toBeNull();
+      // Get alice's profile
+      const { data: profile, error } = await client
+        .from('profiles')
+        .select('*')
+        .eq('id', (await client.auth.getUser()).data.user!.id)
+        .single();
 
-        const testUserId = (await client.auth.getUser()).data.user!.id;
-
-        // Delete the test profile (should succeed)
-        const { error: deleteError } = await client.from('profiles').delete().eq('id', testUserId);
-
-        expect(deleteError).toBeNull();
-
-        // Clean up - delete the test user
-        await serviceClient.auth.admin.deleteUser(testUser.user.id);
-      }
+      expect(error).toBeNull();
+      expect(profile).toBeTruthy();
+      expect(profile.username).toBe('alice');
     });
 
-    it('allows admin users to delete any profile', async () => {
+    it('prevents admin users to delete any profile', async () => {
       // Sign in as admin
       const { error: signInError } = await client.auth.signInWithPassword({
         email: 'admin@example.com',
@@ -246,44 +229,22 @@ describe('Profiles RBAC with RLS', () => {
       });
       expect(signInError).toBeNull();
 
-      // Create a temporary profile for testing admin deletion
-      const serviceClient = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      );
-
-      const { data: testUser } = await serviceClient.auth.admin.createUser({
-        email: 'test-admin-delete@example.com',
-        password: 'Passw0rd!',
-        email_confirm: true,
-      });
-
-      if (testUser.user) {
-        // Admin should be able to delete the test profile
-        const { error: deleteError } = await client
-          .from('profiles')
-          .delete()
-          .eq('id', testUser.user.id);
-
-        expect(deleteError).toBeNull();
-
-        // Clean up - delete the test user
-        await serviceClient.auth.admin.deleteUser(testUser.user.id);
-      }
-    });
-
-    it('prevents regular users from deleting other profiles', async () => {
-      // Sign in as alice
-      const { error: signInError } = await client.auth.signInWithPassword({
-        email: 'alice@example.com',
-        password: 'Passw0rd!',
-      });
-      expect(signInError).toBeNull();
-
       // Try to delete bob's profile (should fail)
-      const { error: deleteError } = await client.from('profiles').delete().eq('username', 'bob');
+      const { data: deletedProfile } = await client.from('profiles').delete().eq('username', 'bob');
 
-      expect(deleteError).toBeTruthy();
+      // Null Data, No error https://github.com/supabase/supabase/issues/30190
+      expect(deletedProfile).toBeNull();
+
+      const { data: profile, error } = await client
+        .from('profiles')
+        .select('*')
+        .eq('username', 'bob')
+        .select()
+        .single();
+
+      expect(error).toBeNull();
+      expect(profile).toBeTruthy();
+      expect(profile.username).toBe('bob');
     });
   });
 
@@ -327,143 +288,160 @@ describe('Profiles RBAC with RLS', () => {
 
       expect(error).toBeNull();
       expect(profiles).toBeTruthy();
-      expect(profiles!.length).toBeGreaterThan(0);
+      expect(profiles!.length).toBeGreaterThan(1);
+
+      // Sign out
+      await client.auth.signOut().catch(() => {});
+
+      // Test that user can access profiles.view permission only for his own profile
+      const { error: userSignInError } = await client.auth.signInWithPassword({
+        email: 'alice@example.com',
+        password: 'Passw0rd!',
+      });
+      expect(userSignInError).toBeNull();
+
+      // User should be able to list his own profile due to profiles.view permission
+      const { data: userProfile, error: userError } = await client.from('profiles').select('*');
+
+      expect(userError).toBeNull();
+      expect(userProfile).toBeTruthy();
+      expect(userProfile!.length).toBe(1);
     });
   });
 
-  describe('JWT Validation and Security', () => {
-    it('invalidates JWT when role changes', async () => {
-      // Sign in as alice
-      const { error: signInError } = await client.auth.signInWithPassword({
-        email: 'alice@example.com',
-        password: 'Passw0rd!',
-      });
-      expect(signInError).toBeNull();
+  // describe('JWT Validation and Security', () => {
+  //   it('invalidates JWT when role changes', async () => {
+  //     // Sign in as alice
+  //     const { error: signInError } = await client.auth.signInWithPassword({
+  //       email: 'alice@example.com',
+  //       password: 'Passw0rd!',
+  //     });
+  //     expect(signInError).toBeNull();
 
-      const userId = (await client.auth.getUser()).data.user!.id;
+  //     const userId = (await client.auth.getUser()).data.user!.id;
 
-      // Use service role to change alice's role to admin (simulating role change)
-      const serviceClient = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      );
+  //     // Use service role to change alice's role to admin (simulating role change)
+  //     const serviceClient = createSupabaseClient(
+  //       process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  //       process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  //     );
 
-      const { error: roleError } = await serviceClient.rpc('grant_role', {
-        p_user_id: userId,
-        p_role: 'admin',
-        skip_auth_check: true,
-      });
-      expect(roleError).toBeNull();
+  //     const { error: roleError } = await serviceClient.rpc('grant_role', {
+  //       p_user_id: userId,
+  //       p_role: 'admin',
+  //       skip_auth_check: true,
+  //     });
+  //     expect(roleError).toBeNull();
 
-      // The profile should now have jwt_valid = false
-      const { data: profile } = await serviceClient
-        .from('jwt_tokens')
-        .select('jwt_valid')
-        .eq('id', userId)
-        .single();
+  //     // The profile should now have jwt_valid = false
+  //     const { data: profile } = await serviceClient
+  //       .from('jwt_tokens')
+  //       .select('jwt_valid')
+  //       .eq('id', userId)
+  //       .single();
 
-      expect(profile?.jwt_valid).toBe(false);
+  //     expect(profile?.jwt_valid).toBe(false);
 
-      // Clean up - restore original role
-      await serviceClient.rpc('grant_role', {
-        p_user_id: userId,
-        p_role: 'user',
-        skip_auth_check: true,
-      });
-    });
+  //     // Clean up - restore original role
+  //     await serviceClient.rpc('grant_role', {
+  //       p_user_id: userId,
+  //       p_role: 'user',
+  //       skip_auth_check: true,
+  //     });
+  //   });
 
-    it('prevents access to resources when JWT is invalidated', async () => {
-      // Sign in as alice
-      const { error: signInError } = await client.auth.signInWithPassword({
-        email: 'alice@example.com',
-        password: 'Passw0rd!',
-      });
-      expect(signInError).toBeNull();
+  //   it('prevents access to resources when JWT is invalidated', async () => {
+  //     // Sign in as alice
+  //     const { error: signInError } = await client.auth.signInWithPassword({
+  //       email: 'alice@example.com',
+  //       password: 'Passw0rd!',
+  //     });
+  //     expect(signInError).toBeNull();
 
-      const userId = (await client.auth.getUser()).data.user!.id;
+  //     const userId = (await client.auth.getUser()).data.user!.id;
 
-      // Verify alice can access her own profile initially
-      const { data: profile, error: profileError } = await client
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      expect(profileError).toBeNull();
-      expect(profile).toBeTruthy();
+  //     // Verify alice can access her own profile initially
+  //     const { data: profile, error: profileError } = await client
+  //       .from('profiles')
+  //       .select('*')
+  //       .eq('id', userId)
+  //       .single();
+  //     expect(profileError).toBeNull();
+  //     expect(profile).toBeTruthy();
 
-      // Use service role to invalidate alice's JWT
-      const serviceClient = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      );
+  //     // Use service role to invalidate alice's JWT
+  //     const serviceClient = createSupabaseClient(
+  //       process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  //       process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  //     );
 
-      await serviceClient
-        .from('jwt_tokens')
-        .update({ jwt_valid: false, updated_at: new Date().toISOString() })
-        .eq('id', userId);
+  //     await serviceClient
+  //       .from('jwt_tokens')
+  //       .update({ jwt_valid: false, updated_at: new Date().toISOString() })
+  //       .eq('id', userId);
 
-      // Now alice should not be able to access her own profile due to JWT invalidation
-      const { data: profileAfter, error: profileErrorAfter } = await client
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+  //     // Now alice should not be able to access her own profile due to JWT invalidation
+  //     const { data: profileAfter, error: profileErrorAfter } = await client
+  //       .from('profiles')
+  //       .select('*')
+  //       .eq('id', userId)
+  //       .single();
 
-      expect(profileErrorAfter).toBeTruthy();
-      expect(profileAfter).toBeNull();
+  //     expect(profileErrorAfter).toBeTruthy();
+  //     expect(profileAfter).toBeNull();
 
-      // Clean up - restore JWT validity
-      await serviceClient
-        .from('jwt_tokens')
-        .update({ jwt_valid: true, updated_at: new Date().toISOString() })
-        .eq('id', userId);
-    });
+  //     // Clean up - restore JWT validity
+  //     await serviceClient
+  //       .from('jwt_tokens')
+  //       .update({ jwt_valid: true, updated_at: new Date().toISOString() })
+  //       .eq('id', userId);
+  //   });
 
-    it('prevents access to user_roles when JWT is invalidated', async () => {
-      // Sign in as alice
-      const { error: signInError } = await client.auth.signInWithPassword({
-        email: 'alice@example.com',
-        password: 'Passw0rd!',
-      });
-      expect(signInError).toBeNull();
+  //   it('prevents access to user_roles when JWT is invalidated', async () => {
+  //     // Sign in as alice
+  //     const { error: signInError } = await client.auth.signInWithPassword({
+  //       email: 'alice@example.com',
+  //       password: 'Passw0rd!',
+  //     });
+  //     expect(signInError).toBeNull();
 
-      const userId = (await client.auth.getUser()).data.user!.id;
+  //     const userId = (await client.auth.getUser()).data.user!.id;
 
-      // Verify alice can access her own role initially
-      const { data: role, error: roleError } = await client
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-      expect(roleError).toBeNull();
-      expect(role).toBeTruthy();
+  //     // Verify alice can access her own role initially
+  //     const { data: role, error: roleError } = await client
+  //       .from('user_roles')
+  //       .select('*')
+  //       .eq('user_id', userId)
+  //       .single();
+  //     expect(roleError).toBeNull();
+  //     expect(role).toBeTruthy();
 
-      // Use service role to invalidate alice's JWT
-      const serviceClient = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      );
+  //     // Use service role to invalidate alice's JWT
+  //     const serviceClient = createSupabaseClient(
+  //       process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  //       process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  //     );
 
-      await serviceClient
-        .from('jwt_tokens')
-        .update({ jwt_valid: false, updated_at: new Date().toISOString() })
-        .eq('id', userId);
+  //     await serviceClient
+  //       .from('jwt_tokens')
+  //       .update({ jwt_valid: false, updated_at: new Date().toISOString() })
+  //       .eq('id', userId);
 
-      // Now alice should not be able to access her role due to JWT invalidation
-      const { data: roleAfter, error: roleErrorAfter } = await client
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+  //     // Now alice should not be able to access her role due to JWT invalidation
+  //     const { data: roleAfter, error: roleErrorAfter } = await client
+  //       .from('user_roles')
+  //       .select('*')
+  //       .eq('user_id', userId)
+  //       .single();
 
-      expect(roleErrorAfter).toBeTruthy();
-      expect(roleAfter).toBeNull();
+  //     expect(roleErrorAfter).toBeTruthy();
+  //     expect(roleAfter).toBeNull();
 
-      // Clean up - restore JWT validity
-      await serviceClient
-        .from('jwt_tokens')
-        .update({ jwt_valid: true, updated_at: new Date().toISOString() })
-        .eq('id', userId);
-    });
-  });
+  //     // Clean up - restore JWT validity
+  //     await serviceClient
+  //       .from('jwt_tokens')
+  //       .update({ jwt_valid: true, updated_at: new Date().toISOString() })
+  //       .eq('id', userId);
+  //   });
+  // });
 });
