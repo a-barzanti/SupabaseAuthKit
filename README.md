@@ -42,3 +42,7 @@ Next.js + Supabase + TypeScript starter with built-in authentication, RBAC, prot
 ## Enable Auth hook
 
 In the dashboard, navigate to `Authentication > Hooks` and select the appropriate function type (SQL or HTTP) from the dropdown menu.
+
+## 🔐 Security Considerations
+
+For improved security and to ensure timely invalidation of user sessions upon role changes (demotion or promotion), it is recommended to set the JWT expiration time to 10-15 minutes. This can be configured in your Supabase project settings.
