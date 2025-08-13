@@ -42,6 +42,7 @@ export default async function globalSetup() {
       console.error('❌ Failed to grant admin role:', grantError);
       throw grantError;
     }
+
     console.log(`✅ Promoted admin@example.com to admin role`);
   } else {
     console.error('❌ Admin user not found');
