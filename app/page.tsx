@@ -8,17 +8,8 @@ import { ThemeSwitcher } from '@/components/theme-switcher';
 import { ConnectSupabaseSteps } from '@/components/tutorial/connect-supabase-steps';
 import { SignUpUserSteps } from '@/components/tutorial/sign-up-user-steps';
 import { hasEnvVars } from '@/lib/utils';
-import { createClient } from '@/lib/supabase/server';
 
 export default async function Home() {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data?.user) {
-    console.log(error, typeof error);
-    // redirect('/auth/login');
-  }
-
   return (
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-full flex flex-col gap-20 items-center">
