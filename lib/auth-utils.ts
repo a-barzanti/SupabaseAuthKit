@@ -1,6 +1,5 @@
-import { AuthSessionMissingError, UserResponse } from '@supabase/supabase-js';
+import { UserResponse } from '@supabase/supabase-js';
 import { jwtDecode } from 'jwt-decode';
-import { redirect } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/server';
 
@@ -13,15 +12,12 @@ type AuthUser = UserResponse['data']['user'] & {
   role: UserRole;
 };
 
-export async function GetAuthUser(): Promise<AuthUser> {
+export async function GetAuthUser(): Promise<AuthUser | null> {
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.getUser();
   if (error || !data?.user) {
-    if (error instanceof AuthSessionMissingError) {
-      redirect('/auth/login');
-    }
-    throw new Error(error ? error.message : 'Cannot get auth details');
+    return null;
   }
 
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();

@@ -3,21 +3,17 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { GetAuthUser } from '../auth-utils';
 
 export async function updateSession(request: NextRequest) {
-  // Define public paths that do not require authentication
-  const publicPaths = ['/', '/auth'];
-
-  const isPublicPath = publicPaths.some(
-    (path) => path === '/' || request.nextUrl.pathname.startsWith(path),
-  );
-
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
+  const isPublicPath =
+    request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/auth');
 
   // Only attempt to get user if it's not a public path
   const authUser = !isPublicPath ? await GetAuthUser() : null;
 
+  console.log('authUser', authUser);
+  console.log('isPublicPath', isPublicPath);
+  console.log('request.nextUrl.pathname', request.nextUrl.pathname);
   if (!authUser && !isPublicPath) {
+    console.log('redirecting to login');
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
