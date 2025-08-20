@@ -44,7 +44,7 @@ begin
   
   return bind_permissions > 0;
 end;
-$$ language plpgsql security definer set search_path = '';
+$$ language plpgsql security definer set search_path = 'public';
 
 -- Row Level Security
 alter table public.profiles enable row level security;

@@ -11,7 +11,7 @@ returns public.app_role
 as $$
 begin
   if not skip_auth_check then
-    if not authorize('users.update') then
+    if not public.authorize('users.update'::public.app_permission) then
       raise exception 'You do not have permission to grant roles';
     end if;
   end if;
@@ -37,7 +37,7 @@ create or replace function public.get_all_auth_users() returns table (
 declare
   user_role text;
 begin
-  if not authorize('users.view') then
+  if not public.authorize('users.view'::public.app_permission) then
     raise exception 'Access denied. You do not have permission to view users.';
   end if;
 
@@ -68,7 +68,7 @@ create or replace function public.update_user(
 declare
   current_user_role text;
 begin
-  if not authorize('users.update') then
+  if not public.authorize('users.update'::public.app_permission) then
     raise exception 'Access denied. You do not have permission to update users.';
   end if;
 
@@ -121,7 +121,7 @@ create or replace function public.delete_user(
 declare
   user_role text;
 begin
-  if not authorize('users.delete') then
+  if not public.authorize('users.delete'::public.app_permission) then
     raise exception 'Access denied. You do not have permission to delete users.';
   end if;
 

@@ -4,6 +4,7 @@ import { createClient as createSupabaseClient, type SupabaseClient } from '@supa
 // 1) We will import the function under test AFTER mocks
 //    so the function sees our mocks.
 let GetAuthUser: typeof import('@/lib/auth-utils').GetAuthUser;
+import { RedirectError } from '@/lib/auth-utils';
 
 // 2) Real browser-safe client (anon) that our mock createClient() will return
 let client: SupabaseClient;
@@ -14,10 +15,7 @@ let client: SupabaseClient;
 vi.mock('next/navigation', () => {
   return {
     redirect: (path: string) => {
-      const err: Error & { isRedirect?: boolean } = new Error(`REDIRECT:${path}`);
-      // Mark so assertable if needed
-      err.isRedirect = true;
-      throw err;
+      throw new RedirectError(`REDIRECT:${path}`);
     },
   };
 });
@@ -74,7 +72,7 @@ describe('GetAuthUser', () => {
 
     const result = await GetAuthUser();
 
-    expect(result.role).toBe('admin'); // <- requires you fix the 'admim' typo
+    expect(result.role).toBe('admin');
     expect(result.profile.username).toBeTruthy();
   });
 
