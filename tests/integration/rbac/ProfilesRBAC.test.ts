@@ -258,8 +258,8 @@ describe('Profiles RBAC with RLS', () => {
       expect(signInError).toBeNull();
 
       const result = await GetAuthUser();
-      expect(result.role).toBe('admin');
-      expect(result.profile.username).toBe('admin');
+      expect(result!.role).toBe('admin');
+      expect(result!.profile.username).toBe('admin');
     });
 
     it('correctly identifies regular user roles from JWT claims', async () => {
@@ -271,8 +271,8 @@ describe('Profiles RBAC with RLS', () => {
       expect(signInError).toBeNull();
 
       const result = await GetAuthUser();
-      expect(result.role).toBe('user');
-      expect(result.profile.username).toBe('alice');
+      expect(result!.role).toBe('user');
+      expect(result!.profile.username).toBe('alice');
     });
 
     it('enforces role-based permissions correctly', async () => {

@@ -24,11 +24,13 @@ touch .env
 # Ensure variables exist in the file; add them if missing
 grep -q '^NEXT_PUBLIC_SUPABASE_URL=' .env || echo "NEXT_PUBLIC_SUPABASE_URL=" >> .env
 grep -q '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' .env || echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=" >> .env
+grep -q '^SUPABASE_SERVICE_ROLE_KEY=' .env || echo "SUPABASE_SERVICE_ROLE_KEY=" >> .env
 
 # Now update them
 sed -i.bak \
   -e "s#^NEXT_PUBLIC_SUPABASE_URL=.*#NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL#" \
   -e "s#^NEXT_PUBLIC_SUPABASE_ANON_KEY=.*#NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_KEY#" \
+  -e "s#^SUPABASE_SERVICE_ROLE_KEY=.*#SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY#" \
   .env
 
 rm -f .env.bak

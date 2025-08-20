@@ -1,4 +1,5 @@
 -- Seed the admin permissions
 insert into public.role_permissions (role, permission) values
-  ('admin', 'profiles.view'),
-  ('admin', 'profiles.update')
+  ('admin', 'users.view'),
+  ('admin', 'users.update'),
+  ('admin', 'users.delete')

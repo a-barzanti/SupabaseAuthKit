@@ -1,5 +1,5 @@
 -- Custom types
-create type public.app_permission as enum ('profiles.view', 'profiles.update');
+create type public.app_permission as enum ('users.view', 'users.update', 'users.delete');
 create type public.app_role as enum ('admin', 'user');
 
 -- Profiles Table
@@ -57,7 +57,7 @@ for select
 to authenticated
 using (
   (select auth.uid()) = id
-  or authorize('profiles.view')
+  or authorize('users.view')
 );
 
 create policy "Profile update policy"
@@ -66,7 +66,7 @@ for update
 to authenticated
 using (
   (select auth.uid()) = id
-  or authorize('profiles.update')
+  or authorize('users.update')
 );
 
 -- Send "previous data" on change 
