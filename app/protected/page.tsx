@@ -1,9 +1,15 @@
 import { InfoIcon } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
 import { GetAuthUser } from '@/lib/auth-utils';
 
 export default async function ProtectedPage() {
   const authUser = await GetAuthUser();
+
+  if (!authUser) {
+    console.log('Protected page access denied: user not authenticated');
+    redirect('/auth/login');
+  }
 
   return (
     <div className="flex-1 w-full flex flex-col gap-12">

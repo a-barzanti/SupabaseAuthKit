@@ -8,6 +8,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const authUser = await GetAuthUser();
 
   if (!authUser || authUser.role !== 'admin') {
+    console.log('Admin access denied: user not authenticated or not admin', {
+      hasUser: !!authUser,
+      role: authUser?.role,
+    });
     redirect('/protected');
   }
 

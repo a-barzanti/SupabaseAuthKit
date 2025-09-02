@@ -8,7 +8,7 @@ export default async function globalSetup() {
   // Create demo users with service role
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!, // server-only
+    process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!, // now public
   );
 
   const demoUsers = [

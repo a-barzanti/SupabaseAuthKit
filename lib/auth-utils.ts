@@ -3,15 +3,6 @@ import { jwtDecode } from 'jwt-decode';
 
 import { createClient } from '@/lib/supabase/server';
 
-export class RedirectError extends Error {
-  isRedirect: boolean;
-  constructor(message: string) {
-    super(message);
-    this.name = 'RedirectError';
-    this.isRedirect = true;
-  }
-}
-
 type UserRole = 'user' | 'admin';
 
 type AuthUser = UserResponse['data']['user'] & {
@@ -26,12 +17,14 @@ export async function GetAuthUser(): Promise<AuthUser | null> {
 
   const { data, error } = await supabase.auth.getUser();
   if (error || !data?.user) {
-    throw new RedirectError('REDIRECT:/auth/login');
+    console.log('Auth error: No user or error getting user', error?.message);
+    return null;
   }
 
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   if (sessionError || !sessionData?.session) {
-    throw new RedirectError('REDIRECT:/auth/login');
+    console.log('Session error: No session or error getting session', sessionError?.message);
+    return null;
   }
   const jwt = jwtDecode<{ user_role: UserRole }>(sessionData.session.access_token);
   if (!jwt?.user_role) throw new Error('No user_role in authentication ensure the hook is enabled');

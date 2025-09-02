@@ -14,7 +14,7 @@ export async function updateSession(request: NextRequest) {
   console.log('isPublicPath', isPublicPath);
   console.log('request.nextUrl.pathname', request.nextUrl.pathname);
   if (!authUser && !isPublicPath) {
-    console.log('redirecting to login');
+    console.log('No authenticated user, redirecting to login');
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
