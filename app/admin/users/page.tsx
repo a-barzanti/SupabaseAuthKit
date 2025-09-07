@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
-import { UserList, UserData } from '@/components/user-list';
+import { UserList } from '@/components/user-list';
+import { UserData } from '@/lib/types';
 
 export default async function UserManagementPage() {
   const supabase = await createClient();

@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, Pencil1Icon, TrashIcon } from '@radix-ui/react-icons';
 
-import { createClient } from '@/lib/supabase/client';
+import { deleteUser, updateUserProfile } from '@/lib/actions/user-actions';
+import { usePagination } from '@/lib/hooks/use-pagination';
+import { useSearch } from '@/lib/hooks/use-search';
+import { UserData } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
@@ -27,13 +30,6 @@ import {
 import { EditUserForm } from './edit-user-form';
 import { AddUserForm } from './add-user-form';
 
-export interface UserData {
-  id: string;
-  email: string;
-  role: 'user' | 'admin';
-  username: string | null; // Make username optional
-}
-
 interface UserListProps {
   initialUsers: UserData[];
 }
@@ -43,43 +39,31 @@ export function UserList({ initialUsers }: UserListProps) {
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.username?.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const { searchQuery, setSearchQuery, filteredItems } = useSearch(users, {
+    searchFields: ['email', 'username'],
+  });
 
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
-
-  const handleNextPage = () => {
-    setCurrentPage((prevPage) => Math.min(prevPage + 1, totalPages));
-  };
-
-  const handlePrevPage = () => {
-    setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
-  };
-
-  const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page when items per page changes
-  };
+  const {
+    currentPage,
+    itemsPerPage,
+    totalPages,
+    paginatedItems,
+    startIndex,
+    endIndex,
+    handleNextPage,
+    handlePrevPage,
+    handleItemsPerPageChange,
+  } = usePagination(filteredItems);
 
   const handleDeleteUser = async (userId: string) => {
     if (confirm('Are you sure you want to delete this user?')) {
-      const supabase = createClient();
-      const { error } = await supabase.rpc('delete_user', { user_id_in: userId });
+      const { error, success } = await deleteUser(userId);
 
       if (error) {
         console.error('Error deleting user:', error);
-        alert(`Error deleting user: ${error.message}`);
-      } else {
+        alert(`Error deleting user: ${error}`);
+      } else if (success) {
         alert('User deleted successfully!');
         setUsers(users.filter((user) => user.id !== userId));
       }
@@ -92,23 +76,24 @@ export function UserList({ initialUsers }: UserListProps) {
   };
 
   const handleUpdateUser = async (updatedUser: UserData) => {
-    const supabase = createClient();
-    const { error: updateError } = await supabase.rpc('update_user', {
-      user_id_in: updatedUser.id,
-      new_email_in: updatedUser.email,
-      new_role_in: updatedUser.role,
-      new_username_in: updatedUser.username,
+    const { error, success } = await updateUserProfile({
+      id: updatedUser.id,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      username: updatedUser.username || undefined,
     });
 
-    if (updateError) {
-      console.error('Error updating user:', updateError);
-      alert(`Error updating user: ${updateError.message}`);
+    if (error) {
+      console.error('Error updating user:', error);
+      alert(`Error updating user: ${error}`);
       return;
     }
 
-    alert('User updated successfully!');
-    setIsEditDialogOpen(false);
-    setUsers(users.map((user) => (user.id === updatedUser.id ? updatedUser : user)));
+    if (success) {
+      alert('User updated successfully!');
+      setIsEditDialogOpen(false);
+      setUsers(users.map((user) => (user.id === updatedUser.id ? updatedUser : user)));
+    }
   };
 
   const handleAddUserSuccess = (newUser: UserData) => {
@@ -150,7 +135,7 @@ export function UserList({ initialUsers }: UserListProps) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedUsers.map((user) => (
+              {paginatedItems.map((user) => (
                 <tr key={user.id}>
                   <td className="px-6 py-4 whitespace-nowrap">{user.id}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>

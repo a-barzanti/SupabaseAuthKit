@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createUser } from '@/lib/actions/user-actions';
-
-import { UserData } from './user-list'; // Import UserData from user-list
+import { createUserAdmin } from '@/lib/actions/user-actions';
+import { UserData } from '@/lib/types';
 
 interface AddUserFormProps {
   onSuccess: (newUser: UserData) => void;
@@ -22,20 +21,24 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget as HTMLFormElement);
-    const { data, error } = await createUser(formData);
+
+    const { data, error, success } = await createUserAdmin({
+      email,
+      password,
+      role: role as 'user' | 'admin',
+    });
 
     if (error) {
       console.error('Error adding user:', error);
       alert(`Error adding user: ${error}`);
-    } else if (data) {
+    } else if (data && success) {
       alert(`User ${data.email} added successfully!`);
       onSuccess(data);
       setEmail('');
       setPassword('');
       setRole('user');
     } else {
-      alert('User registration initiated. Check email for confirmation.');
+      alert('User creation initiated.');
       onCancel();
       setEmail('');
       setPassword('');
@@ -50,6 +53,7 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
         <Input
           type="email"
           id="email"
+          name="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -62,6 +66,7 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
         <Input
           type="password"
           id="password"
+          name="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -73,6 +78,7 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
         <Label htmlFor="role">Role</Label>
         <select
           id="role"
+          name="role"
           value={role}
           onChange={(e) => setRole(e.target.value)}
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
