@@ -1,6 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/client';
-import { UserData } from '@/lib/types';
 
 // Types for action responses
 export interface ActionResponse<T = unknown> {
@@ -79,7 +77,6 @@ function handleUserActionError<T = unknown>(
 async function createUserViaSignUp({
   email,
   password,
-  role,
   emailRedirectTo,
 }: CreateUserData): Promise<ActionResponse> {
   const supabase = createClient();
@@ -88,7 +85,6 @@ async function createUserViaSignUp({
     password,
     options: {
       emailRedirectTo,
-      data: role ? { user_role: role } : undefined,
     },
   });
 
@@ -100,21 +96,23 @@ async function createUserViaSignUp({
 }
 
 /**
- * Creates a user via admin client (for admin user creation)
+ * Creates a user via signup with intended role (for admin user creation)
  */
 async function createUserViaAdmin({
   email,
   password,
   role = 'user',
-  emailConfirm = true,
-}: CreateUserData): Promise<ActionResponse<UserData>> {
-  const supabaseAdmin = createAdminClient();
-  const { data, error } = await supabaseAdmin.auth.admin.createUser({
+  emailRedirectTo,
+}: CreateUserData): Promise<ActionResponse> {
+  const supabase = createClient();
+  const { error } = await supabase.auth.signUp({
     email,
     password,
-    email_confirm: emailConfirm,
-    app_metadata: {
-      user_role: role,
+    options: {
+      emailRedirectTo,
+      data: {
+        intended_role: role,
+      },
     },
   });
 
@@ -122,19 +120,7 @@ async function createUserViaAdmin({
     return { error: error.message };
   }
 
-  if (!data.user) {
-    return { error: 'User data not returned after creation.' };
-  }
-
-  // Supabase admin.createUser does not return username, so we default to null
-  const newUser: UserData = {
-    id: data.user.id,
-    email: data.user.email || '',
-    role: (data.user.app_metadata.user_role as 'user' | 'admin') || 'user',
-    username: null, // Admin created users do not have a username by default
-  };
-
-  return { data: newUser, success: true };
+  return { success: true };
 }
 
 // ====================
@@ -301,13 +287,13 @@ export async function updateUserProfile({
 // ====================
 
 /**
- * Create user via admin client (for admin user management)
+ * Create user via signup with intended role (for admin user management)
  */
 export async function createUserAdmin({
   email,
   password,
   role = 'user',
-}: CreateUserData): Promise<ActionResponse<UserData>> {
+}: CreateUserData): Promise<ActionResponse> {
   try {
     // Validate email format
     const emailError = validateEmail(email);
@@ -315,16 +301,16 @@ export async function createUserAdmin({
       return { error: emailError };
     }
 
-    // Create user via admin client
+    // Create user via regular signup with intended role
     const result = await createUserViaAdmin({
       email,
       password,
       role,
-      emailConfirm: true,
+      emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/confirm`,
     });
 
     return result;
   } catch (error) {
-    return handleUserActionError<UserData>(error, 'An error occurred during admin user creation');
+    return handleUserActionError(error, 'An error occurred during admin user creation');
   }
 }

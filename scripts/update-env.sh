@@ -8,7 +8,6 @@ pnpm supabase:start | tee "$temp_file"
 
 SUPABASE_URL=$(grep "API URL:" "$temp_file" | awk '{print $3}')
 SUPABASE_KEY=$(grep "anon key:" "$temp_file" | awk '{print $3}')
-NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=$(grep "service_role key:" "$temp_file" | awk '{print $3}')
 POSTGRES_PORT=$(grep "DB URL:" "$temp_file" | sed -E 's/.*:54([0-9]+).*/54\1/')
 
 rm "$temp_file"
@@ -24,13 +23,11 @@ touch .env
 # Ensure variables exist in the file; add them if missing
 grep -q '^NEXT_PUBLIC_SUPABASE_URL=' .env || echo "NEXT_PUBLIC_SUPABASE_URL=" >> .env
 grep -q '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' .env || echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=" >> .env
-grep -q '^NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=' .env || echo "NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=" >> .env
 
 # Now update them
 sed -i.bak \
   -e "s#^NEXT_PUBLIC_SUPABASE_URL=.*#NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL#" \
   -e "s#^NEXT_PUBLIC_SUPABASE_ANON_KEY=.*#NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_KEY#" \
-  -e "s#^NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=.*#NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=$NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY#" \
   .env
 
 rm -f .env.bak
@@ -41,13 +38,11 @@ touch .env.test
 # Ensure variables exist in .env.test; add them if missing
 grep -q '^NEXT_PUBLIC_SUPABASE_URL=' .env.test || echo "NEXT_PUBLIC_SUPABASE_URL=" >> .env.test
 grep -q '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' .env.test || echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=" >> .env.test
-grep -q '^NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=' .env.test || echo "NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=" >> .env.test
 
 # Now update .env.test
 sed -i.bak \
   -e "s#^NEXT_PUBLIC_SUPABASE_URL=.*#NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL#" \
   -e "s#^NEXT_PUBLIC_SUPABASE_ANON_KEY=.*#NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_KEY#" \
-  -e "s#^NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=.*#NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=$NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY#" \
   .env.test
 
 rm -f .env.test.bak
@@ -55,5 +50,4 @@ rm -f .env.test.bak
 echo "✅ Supabase ready:"
 echo "🌐 URL: $SUPABASE_URL"
 echo "🔑 Key: $SUPABASE_KEY"
-echo "🔐 Service Role Key: $NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY"
 echo "📝 Updated .env and .env.test"
