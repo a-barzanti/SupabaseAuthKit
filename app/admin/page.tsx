@@ -2,23 +2,17 @@ import Link from 'next/link';
 
 export default function AdminDashboardPage() {
   return (
-    <div className="flex-1 w-full flex flex-col gap-12">
-      <h2 className="font-bold text-2xl mb-4">Admin Dashboard</h2>
+    <div className="flex flex-col gap-4">
+      <h1 className="text-2xl font-semibold">Platform administration</h1>
       <p>
-        Welcome to the admin area. From here you can manage various aspects of your application.
+        Manage platform roles and profiles. Organization permissions come from separate memberships.
       </p>
-      <p>Capabilities include:</p>
-      <ul className="list-disc list-inside">
-        <li>User Management: Add, edit, and delete user accounts.</li>
-        <li>Settings Configuration: (Coming soon)</li>
-      </ul>
-      <p>
-        Navigate to the{' '}
-        <Link href="/admin/users" className="text-blue-500 hover:underline">
-          User Management
-        </Link>{' '}
-        page to manage users.
-      </p>
+      <Link className="underline" href="/admin/users">
+        Manage platform users
+      </Link>
+      <Link className="underline" href="/protected">
+        Your organizations
+      </Link>
     </div>
   );
 }

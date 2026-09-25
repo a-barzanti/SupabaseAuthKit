@@ -1,58 +1,49 @@
-#!/usr/bin/env node
-
+// Controlled fixture setup only; never trust signup metadata for role assignment.
 import { createClient } from '@supabase/supabase-js';
 
-async function setupTestUsers() {
-  // Get anon key from environment (client-side key)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !anonKey) {
-    console.error(
-      '❌ Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables',
+export async function setupTestUsers() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (
+    !url ||
+    !key ||
+    process.env.AUTHKIT_TEST_DISPOSABLE !== '1' ||
+    !['127.0.0.1', 'localhost'].includes(new URL(url).hostname)
+  ) {
+    throw new Error(
+      'Integration fixtures require a loopback disposable stack, SUPABASE_SERVICE_ROLE_KEY and AUTHKIT_TEST_DISPOSABLE=1.',
     );
-    console.error('Make sure to set these in your environment');
-    process.exit(1);
   }
-
-  const supabase = createClient(supabaseUrl, anonKey, {
-    auth: {
-      persistSession: false,
-    },
+  const client = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
   });
-
-  const demoUsers = [
-    { email: 'admin@example.com', password: 'Passw0rd!', role: 'admin' },
-    { email: 'alice@example.com', password: 'Passw0rd!', role: 'user' },
-    { email: 'bob@example.com', password: 'Passw0rd!', role: 'user' },
-  ];
-
-  console.log('🚀 Setting up test users...');
-
-  for (const u of demoUsers) {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: u.email,
-        password: u.password,
-        options: {
-          data: {
-            intended_role: u.role,
-          },
-        },
-      });
-
+  const created = [];
+  async function cleanup() {
+    for (const id of created) {
+      const { error } = await client.auth.admin.deleteUser(id);
       if (error) throw error;
-      console.log(`✅ Created ${u.email} as ${u.role} (${data.user?.id})`);
-    } catch (error) {
-      console.error(`❌ Failed to create ${u.email}:`, error.message);
     }
   }
-
-  console.log('🎉 Test users setup complete!');
-  console.log('ℹ️  Note: Users will need to confirm their email addresses before they can sign in');
+  try {
+    for (const name of ['admin', 'alice', 'bob']) {
+      const { data, error } = await client.auth.admin.createUser({
+        email: `${name}@example.com`,
+        password: 'Passw0rd!',
+        email_confirm: true,
+      });
+      if (error) throw error;
+      created.push(data.user.id);
+      if (name === 'admin') {
+        const result = await client
+          .from('user_roles')
+          .update({ role: 'admin' })
+          .eq('user_id', data.user.id);
+        if (result.error) throw result.error;
+      }
+    }
+    return cleanup;
+  } catch (error) {
+    await cleanup();
+    throw error;
+  }
 }
-
-setupTestUsers().catch((error) => {
-  console.error('❌ Setup failed:', error);
-  process.exit(1);
-});

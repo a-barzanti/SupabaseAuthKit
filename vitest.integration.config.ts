@@ -5,6 +5,7 @@ export default defineConfig({
   test: {
     include: ['tests/integration/**/*.{test,spec}.{ts,tsx}'],
     globals: true,
+    fileParallelism: false,
     globalSetup: ['./tests/integration/global-setup.ts'],
   },
   resolve: {

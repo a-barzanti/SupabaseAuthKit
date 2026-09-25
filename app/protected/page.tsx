@@ -1,30 +1,53 @@
-import { InfoIcon } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
-import { GetAuthUser } from '@/lib/auth-utils';
+import { Workspace } from '@/components/organization-workspace';
+import { createClient } from '@/lib/supabase/server';
 
-export default async function ProtectedPage() {
-  const authUser = await GetAuthUser();
-
-  if (!authUser) {
-    console.log('Protected page access denied: user not authenticated');
-    redirect('/auth/login');
-  }
-
+export default async function ProtectedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ organization?: string }>;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/auth/login');
+  const { data: organizations, error } = await supabase
+    .from('organizations')
+    .select('id, name')
+    .order('created_at');
+  if (error) throw new Error(error.message);
+  const { organization: requested } = await searchParams;
+  // Treat URLs as untrusted context, and choose only an RLS-visible organization.
+  const active =
+    organizations.find((org) => org.id === requested)?.id ?? organizations[0]?.id ?? null;
+  const [members, projects] = active
+    ? await Promise.all([
+        supabase
+          .from('organization_memberships')
+          .select('user_id, role')
+          .eq('organization_id', active)
+          .order('created_at'),
+        supabase
+          .from('organization_projects')
+          .select('id, name')
+          .eq('organization_id', active)
+          .order('name'),
+      ])
+    : [
+        { data: [], error: null },
+        { data: [], error: null },
+      ];
+  if (members.error || projects.error)
+    throw new Error(members.error?.message ?? projects.error?.message);
   return (
-    <div className="flex-1 w-full flex flex-col gap-12">
-      <div className="w-full">
-        <div className="bg-accent text-sm p-3 px-5 rounded-md text-foreground flex gap-3 items-center">
-          <InfoIcon size="16" strokeWidth={2} />
-          This is a protected page that you can only see as an authenticated user
-        </div>
-      </div>
-      <div className="flex flex-col gap-2 items-start">
-        <h2 className="font-bold text-2xl mb-4">Your user details</h2>
-        <pre className="text-xs font-mono p-3 rounded border max-h-32 overflow-auto">
-          {JSON.stringify(authUser, null, 2)}
-        </pre>
-      </div>
-    </div>
+    <Workspace
+      userId={user.id}
+      organizations={organizations}
+      active={active}
+      members={members.data ?? []}
+      projects={projects.data ?? []}
+    />
   );
 }

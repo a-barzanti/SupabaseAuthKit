@@ -1,230 +1,94 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon, Pencil1Icon, TrashIcon } from '@radix-ui/react-icons';
 
-import { deleteUser, updateUserProfile } from '@/lib/actions/user-actions';
 import { usePagination } from '@/lib/hooks/use-pagination';
 import { useSearch } from '@/lib/hooks/use-search';
-import { UserData } from '@/lib/types';
-import { Badge } from '@/components/ui/badge';
+import { updateUserProfile } from '@/lib/actions/user-actions';
+import type { UserData } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
-import { EditUserForm } from './edit-user-form';
-import { AddUserForm } from './add-user-form';
-
-interface UserListProps {
-  initialUsers: UserData[];
-}
-
-export function UserList({ initialUsers }: UserListProps) {
-  const [users, setUsers] = useState<UserData[]>(initialUsers);
-  const [editingUser, setEditingUser] = useState<UserData | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-
-  const { searchQuery, setSearchQuery, filteredItems } = useSearch(users, {
+export function UserList({ initialUsers }: { initialUsers: UserData[] }) {
+  const [message, setMessage] = useState('');
+  const [pending, setPending] = useState(false);
+  const { searchQuery, setSearchQuery, filteredItems } = useSearch(initialUsers, {
     searchFields: ['email', 'username'],
   });
-
   const {
-    currentPage,
-    itemsPerPage,
-    totalPages,
     paginatedItems,
-    startIndex,
-    endIndex,
+    currentPage,
+    totalPages,
     handleNextPage,
     handlePrevPage,
-    handleItemsPerPageChange,
+    setCurrentPage,
   } = usePagination(filteredItems);
-
-  const handleDeleteUser = async (userId: string) => {
-    if (confirm('Are you sure you want to delete this user?')) {
-      const { error, success } = await deleteUser(userId);
-
-      if (error) {
-        console.error('Error deleting user:', error);
-        alert(`Error deleting user: ${error}`);
-      } else if (success) {
-        alert('User deleted successfully!');
-        setUsers(users.filter((user) => user.id !== userId));
-      }
-    }
-  };
-
-  const handleEditUser = (user: UserData) => {
-    setEditingUser(user);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleUpdateUser = async (updatedUser: UserData) => {
-    const { error, success } = await updateUserProfile({
-      id: updatedUser.id,
-      email: updatedUser.email,
-      role: updatedUser.role,
-      username: updatedUser.username || undefined,
-    });
-
-    if (error) {
-      console.error('Error updating user:', error);
-      alert(`Error updating user: ${error}`);
-      return;
-    }
-
-    if (success) {
-      alert('User updated successfully!');
-      setIsEditDialogOpen(false);
-      setUsers(users.map((user) => (user.id === updatedUser.id ? updatedUser : user)));
-    }
-  };
-
-  const handleAddUserSuccess = (newUser: UserData) => {
-    setUsers((prevUsers) => [...prevUsers, newUser]);
-    setIsAddDialogOpen(false);
-  };
-
   return (
-    <Card>
-      <CardHeader className="flex-row justify-between items-center">
-        <Input
-          placeholder="Search users..."
-          className="max-w-sm"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <Button onClick={() => setIsAddDialogOpen(true)}>Add New User</Button>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 border-t border-b">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ID
-                </th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Username
-                </th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedItems.map((user) => (
-                <tr key={user.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">{user.id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                      {user.role || 'user'}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{user.username || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleEditUser(user)}
-                      className="mr-2"
-                    >
-                      <Pencil1Icon className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="icon" onClick={() => handleDeleteUser(user.id)}>
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-end items-center px-6 py-4 space-x-4">
-        <div className="flex items-center space-x-2">
-          <Label htmlFor="items-per-page">Rows per page:</Label>
-          <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
-            <SelectTrigger className="w-[80px]">
-              <SelectValue placeholder="10" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex-1 text-right text-sm text-muted-foreground">
-          {startIndex + 1}-{Math.min(endIndex, users.length)} of {users.length} users
-        </div>
-        <Button variant="outline" size="icon" onClick={handlePrevPage} disabled={currentPage === 1}>
-          <ChevronLeftIcon className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages}
+    <div className="flex flex-col gap-4">
+      <p>
+        Platform roles are separate from organization roles. These roles do not grant tenant access.
+      </p>
+      <p>
+        Users register themselves. Identity changes and account deletion require trusted server
+        administration.
+      </p>
+      <p role="status">{message}</p>
+      <Input
+        aria-label="Search platform users"
+        placeholder="Search email or username"
+        value={searchQuery}
+        onChange={(event) => {
+          setSearchQuery(event.target.value);
+          setCurrentPage(1);
+        }}
+      />
+      {paginatedItems.map((user) => (
+        <form
+          key={user.id}
+          className="flex flex-wrap gap-3 items-end border rounded p-3"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            const data = new FormData(event.currentTarget);
+            setPending(true);
+            const result = await updateUserProfile({
+              id: user.id,
+              username: String(data.get('username')),
+              role: data.get('role') as 'admin' | 'user',
+            });
+            setMessage(result.error ?? 'Saved. Platform permissions apply immediately.');
+            setPending(false);
+          }}
         >
-          <ChevronRightIcon className="h-4 w-4" />
+          <span>{user.email}</span>
+          <label>
+            Username
+            <Input name="username" defaultValue={user.username ?? ''} />
+          </label>
+          <label>
+            Platform role
+            <select
+              name="role"
+              defaultValue={user.role}
+              className="block border rounded p-2 bg-background"
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </label>
+          <Button disabled={pending}>Save</Button>
+        </form>
+      ))}
+      <div className="flex gap-3 items-center">
+        <Button variant="outline" onClick={handlePrevPage} disabled={currentPage <= 1}>
+          Previous
         </Button>
-      </CardFooter>
-
-      {editingUser && (
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
-              <DialogDescription>
-                Make changes to the user profile here. Click save when you&apos;re done.
-              </DialogDescription>
-            </DialogHeader>
-            <EditUserForm
-              user={editingUser}
-              onSave={handleUpdateUser}
-              onCancel={() => setIsEditDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
-            <DialogDescription>Create a new user account.</DialogDescription>
-          </DialogHeader>
-          <AddUserForm
-            onSuccess={handleAddUserSuccess}
-            onCancel={() => setIsAddDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-    </Card>
+        <span>
+          Page {currentPage} of {Math.max(1, totalPages)}
+        </span>
+        <Button variant="outline" onClick={handleNextPage} disabled={currentPage >= totalPages}>
+          Next
+        </Button>
+      </div>
+    </div>
   );
 }

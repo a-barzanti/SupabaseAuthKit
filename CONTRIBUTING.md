@@ -1,41 +1,9 @@
-# Contributing to SupabaseAuthKit
+# Contributing
 
-Thank you for considering contributing!
-We welcome Issues, Pull Requests, and ideas to improve SupabaseAuthKit.
+The portable package lives in `skills/supabase-authkit`; the root app demonstrates it. Make authorization changes in the skill's SQL/tests first, update its matrix and integration guidance, then run `pnpm skill:sync` and `pnpm skill:check`. Do not edit deployed migration history; release upgrades need new forward migrations. The initial unreleased 0.2.0 assets are mirrored into `supabase/migrations` for the reference app.
 
----
+Run typecheck, lint, unit tests, a build and the authorization suite against a disposable local Supabase stack. Follow the packaged verification reference for credentials, concurrency checks and cleanup. Existing integration tests also require an explicitly disposable local stack. Record actual output and blockers; do not call static-only checks authorization validation.
 
-## 🚀 How to contribute
+Keep the skill directory self-contained and independent of assistant-specific tool APIs. Document application support separately from assistant discovery. Extend the permission matrix and adversarial tests whenever an operation changes. Preserve identity/membership/permission separation and record data migration decisions instead of inferring owners.
 
-**1. Fork the repository**  
-https://github.com/a-barzanti/SupabaseAuthKit/fork
-
-**2. Create your feature branch**  
-`git checkout -b feature/your-feature-name`
-
-**3. Make your changes**
-
-- Follow project code style (Prettier)
-- Follow existing structure (folders, file names)
-- If adding a new feature → document it in the README or Roadmap
-
-**4. Commit your changes**  
-Use **Conventional Commits** format:  
-Example:  
-`git commit -m "feat(auth): add OAuth login"`
-
-More info: https://www.conventionalcommits.org/en/v1.0.0/
-
-**5. Push to your branch**  
-`git push origin feature/your-feature-name`
-
-**6. Submit a Pull Request**  
-Please ensure:  
-✅ No lint errors  
-✅ No TypeScript errors  
-✅ All tests (if present) pass
-
----
-
-If unsure, open an Issue first — we welcome all contributions!  
-Thank you for helping improve SupabaseAuthKit.
+Before releases, run the fresh/existing-application evaluation scenarios with the supported assistants, check asset parity, tag a version matching skill metadata, and publish immutable asset hashes. Never add test credentials, production data or service keys to commits.

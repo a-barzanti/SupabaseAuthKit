@@ -7,7 +7,7 @@ const compat = new FlatCompat({
 
 const config = [
   {
-    ignores: ['node_modules/**', 'dist/**', 'build/**', '.next/**'],
+    ignores: ['node_modules/**', 'dist/**', 'build/**', '.next/**', 'next-env.d.ts'],
   },
   ...compat.config({
     extends: [
