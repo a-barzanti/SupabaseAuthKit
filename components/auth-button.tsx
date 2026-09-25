@@ -10,7 +10,8 @@ export async function AuthButton() {
 
   return user ? (
     <div className="flex items-center gap-4">
-      Hey, {user.email}!
+      <Link href="/protected">Organizations</Link>
+      {user.role === 'admin' && <Link href="/admin/users">Platform admin</Link>}
       <LogoutButton />
     </div>
   ) : (

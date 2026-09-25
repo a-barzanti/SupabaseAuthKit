@@ -48,7 +48,7 @@ afterEach(async () => {
 describe('GetAuthUser', () => {
   it('returns role "user" for a normal user', async () => {
     // These users should be created in globalSetup with proper roles,
-    // and your custom-claims hook must include { user_role: "user" } in the JWT.
+    // Roles are read from current database state.
     const { error } = await client.auth.signInWithPassword({
       email: 'alice@example.com',
       password: 'Passw0rd!',
@@ -57,9 +57,9 @@ describe('GetAuthUser', () => {
 
     const result = await GetAuthUser();
 
-    expect(result.role).toBe('user');
-    expect(result.profile.username).toBeTruthy();
-    expect(result.id).toBeTruthy(); // from auth user
+    expect(result!.role).toBe('user');
+    expect(result!.profile.username).toBeTruthy();
+    expect(result!.id).toBeTruthy(); // from auth user
   });
 
   it('returns role "admin" for an admin user', async () => {
@@ -71,8 +71,8 @@ describe('GetAuthUser', () => {
 
     const result = await GetAuthUser();
 
-    expect(result.role).toBe('admin');
-    expect(result.profile.username).toBeTruthy();
+    expect(result!.role).toBe('admin');
+    expect(result!.profile.username).toBeTruthy();
   });
 
   it('returns null when no session', async () => {

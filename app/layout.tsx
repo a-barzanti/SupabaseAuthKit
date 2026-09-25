@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
   title: 'SupabaseAuthKit',
   description:
-    'Next.js + Supabase + TypeScript starter with built-in Auth, RBAC, admin panel, protected routes',
+    'SupabaseAuthKit reference app: authentication, organizations, and database-enforced permissions',
 };
 
 const geistSans = Geist({

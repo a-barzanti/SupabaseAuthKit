@@ -20,18 +20,14 @@ export interface SignInData {
 
 export interface UpdateUserData {
   id: string;
-  email?: string;
   username?: string;
   role?: 'user' | 'admin';
-  password?: string;
 }
 
 export interface CreateUserData {
   email: string;
   password: string;
-  role?: 'user' | 'admin';
   emailRedirectTo?: string;
-  emailConfirm?: boolean;
 }
 
 // ====================
@@ -85,34 +81,6 @@ async function createUserViaSignUp({
     password,
     options: {
       emailRedirectTo,
-    },
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  return { success: true };
-}
-
-/**
- * Creates a user via signup with intended role (for admin user creation)
- */
-async function createUserViaAdmin({
-  email,
-  password,
-  role = 'user',
-  emailRedirectTo,
-}: CreateUserData): Promise<ActionResponse> {
-  const supabase = createClient();
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo,
-      data: {
-        intended_role: role,
-      },
     },
   });
 
@@ -237,29 +205,10 @@ export async function updateUserPassword(password: string): Promise<ActionRespon
 }
 
 /**
- * Delete a user (client-side using RPC)
- */
-export async function deleteUser(userId: string): Promise<ActionResponse> {
-  try {
-    const supabase = createClient();
-    const { error } = await supabase.rpc('delete_user', { user_id_in: userId });
-
-    if (error) {
-      return { error: error.message };
-    }
-
-    return { success: true };
-  } catch (error) {
-    return handleUserActionError(error, 'An error occurred during user deletion');
-  }
-}
-
-/**
  * Update user profile (client-side using RPC)
  */
 export async function updateUserProfile({
   id,
-  email,
   username,
   role,
 }: UpdateUserData): Promise<ActionResponse> {
@@ -267,7 +216,6 @@ export async function updateUserProfile({
     const supabase = createClient();
     const { error } = await supabase.rpc('update_user', {
       user_id_in: id,
-      new_email_in: email,
       new_role_in: role,
       new_username_in: username,
     });
@@ -279,38 +227,5 @@ export async function updateUserProfile({
     return { success: true };
   } catch (error) {
     return handleUserActionError(error, 'An error occurred during user update');
-  }
-}
-
-// ====================
-// ADMIN ACTIONS (Client-side with Admin Privileges)
-// ====================
-
-/**
- * Create user via signup with intended role (for admin user management)
- */
-export async function createUserAdmin({
-  email,
-  password,
-  role = 'user',
-}: CreateUserData): Promise<ActionResponse> {
-  try {
-    // Validate email format
-    const emailError = validateEmail(email);
-    if (emailError) {
-      return { error: emailError };
-    }
-
-    // Create user via regular signup with intended role
-    const result = await createUserViaAdmin({
-      email,
-      password,
-      role,
-      emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/confirm`,
-    });
-
-    return result;
-  } catch (error) {
-    return handleUserActionError(error, 'An error occurred during admin user creation');
   }
 }

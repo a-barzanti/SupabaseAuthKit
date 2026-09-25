@@ -117,7 +117,7 @@ describe('Profiles RBAC with RLS', () => {
       const { data } = await client.from('profiles').select('*').limit(1);
 
       // Empty Data, No error https://github.com/supabase/supabase/issues/30190
-      expect(data?.length).toBe(0);
+      expect(data == null || data.length === 0).toBe(true);
     });
   });
 
@@ -249,7 +249,7 @@ describe('Profiles RBAC with RLS', () => {
   });
 
   describe('Role-Based Permission System', () => {
-    it('correctly identifies user roles from JWT claims', async () => {
+    it('correctly identifies user roles from current database platform roles', async () => {
       // Sign in as admin
       const { error: signInError } = await client.auth.signInWithPassword({
         email: 'admin@example.com',
@@ -262,7 +262,7 @@ describe('Profiles RBAC with RLS', () => {
       expect(result!.profile.username).toBe('admin');
     });
 
-    it('correctly identifies regular user roles from JWT claims', async () => {
+    it('correctly identifies regular user roles from current database platform roles', async () => {
       // Sign in as alice
       const { error: signInError } = await client.auth.signInWithPassword({
         email: 'alice@example.com',

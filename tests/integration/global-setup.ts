@@ -1,9 +1,6 @@
-import { execa } from 'execa';
+import { setupTestUsers } from '../../scripts/setup-test-users.js';
 
 export default async function globalSetup() {
-  // 1) Run the pnpm db reset script
-  await execa('pnpm', ['supabase:dbreset'], { stdio: 'inherit' });
-
-  // 2) Run the test user setup script
-  await execa('node', ['scripts/setup-test-users.js'], { stdio: 'inherit' });
+  // Does not reset databases, delete existing accounts, or use signup metadata.
+  return await setupTestUsers();
 }

@@ -1,43 +1,23 @@
 import { UserResponse } from '@supabase/supabase-js';
-import { jwtDecode } from 'jwt-decode';
 
 import { createClient } from '@/lib/supabase/server';
 
-type UserRole = 'user' | 'admin';
-
-type AuthUser = UserResponse['data']['user'] & {
-  profile: {
-    username: string;
-  };
-  role: UserRole;
+type AuthUser = NonNullable<UserResponse['data']['user']> & {
+  profile: { username: string | null };
+  role: 'user' | 'admin';
 };
 
+// Platform roles are separate from organization membership. Never authorize from
+// stale JWT role claims; the database rechecks the current platform role.
 export async function GetAuthUser(): Promise<AuthUser | null> {
   const supabase = await createClient();
-
   const { data, error } = await supabase.auth.getUser();
-  if (error || !data?.user) {
-    console.log('Auth error: No user or error getting user', error?.message);
-    return null;
-  }
-
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError || !sessionData?.session) {
-    console.log('Session error: No session or error getting session', sessionError?.message);
-    return null;
-  }
-  const jwt = jwtDecode<{ user_role: UserRole }>(sessionData.session.access_token);
-  if (!jwt?.user_role) throw new Error('No user_role in authentication ensure the hook is enabled');
-  const role = jwt.user_role;
-
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', data.user.id)
-    .single();
-  if (profileError || !profile?.username) {
-    throw new Error(profileError ? profileError.message : 'Error getting profile');
-  }
-
-  return { ...data.user, profile, role: role };
+  if (error || !data.user) return null;
+  const [profileResult, roleResult] = await Promise.all([
+    supabase.from('profiles').select('username').eq('id', data.user.id).single(),
+    supabase.rpc('current_platform_role'),
+  ]);
+  if (profileResult.error) throw new Error(profileResult.error.message);
+  if (roleResult.error) throw new Error(roleResult.error.message);
+  return { ...data.user, profile: profileResult.data, role: roleResult.data ?? 'user' };
 }

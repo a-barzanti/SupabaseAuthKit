@@ -1,12 +1,7 @@
 import { createClient } from '@/lib/supabase/client';
 
-describe('Supabase connection', () => {
-  const supabase = createClient();
-
-  it('should connect to Supabase and select from profiles', async () => {
-    const { data, error } = await supabase.from('profiles').select('*').limit(1);
-
-    expect(error).toBeNull();
-    expect(data).toBeDefined();
-  });
+it('connects to the API while anonymous profile access is denied', async () => {
+  const { data, error } = await createClient().from('profiles').select('*').limit(1);
+  expect(data).toBeNull();
+  expect(error?.code).toBe('42501');
 });
