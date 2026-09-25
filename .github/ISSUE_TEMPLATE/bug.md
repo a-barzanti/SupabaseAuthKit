@@ -27,8 +27,7 @@ If applicable, add screenshots to help explain your problem.
 **Environment:**
 
 - OS: [e.g. macOS, Windows]
-- Node version: [output of node -v]
-- pnpm version: [output of pnpm -v]
+- Bun version: [output of bun --version]
 
 **Additional context**
 

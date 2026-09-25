@@ -24,6 +24,6 @@ Build one verified organization workflow: sign in, create organizations, switch 
 - [Organization migration](assets/migrations/20260925090000_organizations.sql): the standalone schema and RPCs.
 - [Legacy hardening migration](assets/migrations/20260925080000_legacy_hardening.sql): only for the original global-role SupabaseAuthKit schema.
 - [Workspace component](assets/ui/organization-workspace.tsx): reusable UI, independent of repository imports.
-- [Authorization suite](assets/tests/authorization.mjs) and [runner](scripts/verify.mjs): dependency-free Node scripts.
+- [Authorization suite](assets/tests/authorization.mjs) and [runner](scripts/verify.mjs): dependency-free Bun scripts.
 
 Local tooling is sufficient; an official Supabase MCP connection is an optional transport for inspecting or applying reviewed SQL, not a requirement. Invitations, billing, SSO, custom roles, other frontend frameworks, custom MCP servers, standalone installers and marketplace publishing are outside this slice.

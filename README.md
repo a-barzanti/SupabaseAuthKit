@@ -6,7 +6,7 @@ The kit ships concise agent instructions, reusable SQL migrations, a workspace U
 
 ## Support
 
-**Application stack:** Supabase Auth/Postgres + Next.js 15 App Router + TypeScript. Email/password signup, login, confirmation, recovery and logout are the existing supported auth flow. The reference lockfile pins Next.js **15.5.26**, React **19.2.4**, TypeScript **5.8.3**, `@supabase/ssr` **0.6.1**, `@supabase/supabase-js` **2.50.4**, and Supabase CLI **2.33.7**. Use Node.js 22+ and pnpm (verified with Node.js 22.23.2 and pnpm 11.5.0). See [verification results](docs/verification-results.md) for executed checks and limits.
+**Application stack:** Supabase Auth/Postgres + Next.js 15 App Router + TypeScript. Email/password signup, login, confirmation, recovery and logout are the existing supported auth flow. The reference lockfile pins Next.js **15.5.26**, React **19.2.4**, TypeScript **5.8.3**, `@supabase/ssr` **0.6.1**, `@supabase/supabase-js` **2.50.4**, and Supabase CLI **2.33.7**. Use **Bun 1.3.13+** for dependency installation, scripts and the application runtime (`packageManager` pins the tested version). See [verification results](docs/verification-results.md) for executed checks and limits.
 
 **Assistant compatibility:** the package follows the [open Agent Skills specification](https://agentskills.io/specification) and targets Codex, Claude Code, Cursor and GitHub Copilot. Their discovery locations differ. Portable content is not a claim of tested integration behavior in every assistant; cross-assistant evaluations remain unrun. Other frontend frameworks and Next.js 16 are outside the validated application scope.
 
@@ -15,10 +15,10 @@ The kit ships concise agent instructions, reusable SQL migrations, a workspace U
 The discoverable skill is [skills/supabase-authkit/SKILL.md](skills/supabase-authkit/SKILL.md). Using the external [Skills CLI](https://github.com/vercel-labs/skills):
 
 ```sh
-npx skills add a-barzanti/SupabaseAuthKit --skill supabase-authkit
+bunx --bun skills add a-barzanti/SupabaseAuthKit --skill supabase-authkit
 ```
 
-That remote command becomes usable for this version after these files are published to the repository. To install the current checkout before publication, run `npx skills add . --skill supabase-authkit` from this repository, or copy the **entire** `skills/supabase-authkit` directory into your target application's discovery directory:
+That remote command becomes usable for this version after these files are published to the repository. To install the current checkout before publication, run `bunx --bun skills add . --skill supabase-authkit` from this repository, or copy the **entire** `skills/supabase-authkit` directory into your target application's discovery directory:
 
 | Assistant | Project skill directory | Explicit invocation |
 | --- | --- | --- |
@@ -42,40 +42,42 @@ See the complete [permission matrix](skills/supabase-authkit/references/permissi
 The application stays at the repository root. `/protected` demonstrates organization creation, switching, adding existing users by UUID, role assignment, membership removal, ownership transfer and project CRUD. `/admin/users` retains platform role/profile editing for existing platform administrators. No service credential is required by the application.
 
 ```sh
-pnpm install --frozen-lockfile
-pnpm supabase:start
+bun install --frozen-lockfile
+bun run supabase:start
 cp .env.example .env.local
-# Populate the URL and public anon key from: pnpm exec supabase status
-pnpm dev
+# Populate the URL and public anon key from: bun run supabase status
+bun run dev
 ```
+
+`bunfig.toml` enables Bun for package executables and their child processes, including CLIs with Node shebangs. Use `bun run test` to execute the existing Vitest suite; `bun test` selects Bun's separate test runner. The committed `bun.lock` is the dependency source of truth. The `node:` imports and `@types/node` provide compatible APIs and types used by Next.js and the portable scripts; a separate Node.js installation is not required.
 
 Open [localhost:3000](http://localhost:3000). Sign up with two accounts (use separate browser profiles), create an organization, and add the second user's UUID shown in their workspace. Add that user to another organization with a different role to exercise switching. Local email confirmation is disabled in the supplied Supabase configuration; configure redirects and email templates before enabling confirmation in production. The app uses the cookie refresh middleware and verifies identity server-side.
 
-The first startup applies all migrations. For an existing **local** database use `pnpm exec supabase migration up --local` after reviewing/backing up its data. `pnpm supabase:dbreset` destroys local data and is only for disposable development stacks. Never run a reset to upgrade a populated database.
+The first startup applies all migrations. For an existing **local** database use `bun run supabase migration up --local` after reviewing/backing up its data. `bun run supabase:dbreset` destroys local data and is only for disposable development stacks. Never run a reset to upgrade a populated database.
 
 ## Assets and verification
 
 `skills/supabase-authkit/assets/migrations` is authoritative. The reference application's new migrations are exact copies; the historical 2025 migrations are unchanged. Tests and reusable workspace UI are consumed directly from the skill, avoiding duplicate sources.
 
 ```sh
-pnpm skill:sync          # copy authoritative migrations to the reference app
-pnpm skill:check         # assert parity, skill structure and portable links
-pnpm typecheck
-pnpm lint
-pnpm test
-pnpm build
+bun run skill:sync          # copy authoritative migrations to the reference app
+bun run skill:check         # assert parity, skill structure and portable links
+bun run typecheck
+bun run lint
+bun run test
+bun run build
 ```
 
 For real authorization tests, start a disposable local Supabase stack and follow [verification prerequisites and environment variables](skills/supabase-authkit/references/verification.md), then run:
 
 ```sh
-AUTHKIT_LEGACY=1 pnpm test:authorization   # original starter upgrade
+AUTHKIT_LEGACY=1 bun run test:authorization   # original starter upgrade
 # Fresh integrations omit AUTHKIT_LEGACY and install only the organization migration.
 ```
 
-The suite uses real ordinary-user JWTs and anonymous REST/RPC calls, verifies denied writes leave data unchanged, tests stale claims/revocation, and coordinates concurrent SQL sessions for ownership checks. Service credentials are used only for fixture setup/inspection. It exits nonzero on failures or missing prerequisites. For existing integration tests, set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` and `AUTHKIT_TEST_DISPOSABLE=1` in a gitignored `.env.test`, then run `pnpm test:integration`. The fixture setup refuses non-loopback endpoints, never resets a database, and removes only users it created.
+The suite uses real ordinary-user JWTs and anonymous REST/RPC calls, verifies denied writes leave data unchanged, tests stale claims/revocation, and coordinates concurrent SQL sessions for ownership checks. Service credentials are used only for fixture setup/inspection. It exits nonzero on failures or missing prerequisites. For existing integration tests, set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` and `AUTHKIT_TEST_DISPOSABLE=1` in a gitignored `.env.test`, then run `bun run test:integration`. The fixture setup refuses non-loopback endpoints, never resets a database, and removes only users it created.
 
-The reference browser smoke test is `pnpm test:e2e` against a running reference app and the same disposable-stack `AUTHKIT_*` environment. Install its browser with `pnpm exec playwright install chromium`; set `AUTHKIT_APP_URL` if the app is not at `http://127.0.0.1:3000`. It requires `AUTHKIT_DB_CONTAINER` for fixture cleanup. An existing Chromium executable can be selected with `AUTHKIT_CHROMIUM_PATH`.
+The reference browser smoke test is `bun run test:e2e` against a running reference app and the same disposable-stack `AUTHKIT_*` environment. Install its browser with `bun run playwright install chromium`; set `AUTHKIT_APP_URL` if the app is not at `http://127.0.0.1:3000`. It requires `AUTHKIT_DB_CONTAINER` for fixture cleanup. An existing Chromium executable can be selected with `AUTHKIT_CHROMIUM_PATH`.
 
 The [agent evaluation specification](skills/supabase-authkit/references/agent-evaluations.md) defines separate fresh-application and existing-auth scenarios. Run each assistant independently before advertising cross-assistant validation.
 

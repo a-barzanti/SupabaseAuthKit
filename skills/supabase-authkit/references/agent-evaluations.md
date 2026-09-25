@@ -22,7 +22,7 @@ Expected: additive organization integration, preservation of existing auth/profi
 
 1. Give the agent the scenario and installed skill, not the repository implementation or an intended solution.
 2. Inspect resulting migrations, policies, grants, credentials, membership logic and installation record against the matrix.
-3. Run `node <installed-skill>/scripts/verify.mjs` against the resulting isolated stack. Adapt identifiers in the copied suite only for documented renames. All assertions must pass; unchanged denied-write targets and concurrent-owner checks are mandatory.
+3. Run `bun <installed-skill>/scripts/verify.mjs` against the resulting isolated stack. Adapt identifiers in the copied suite only for documented renames. All assertions must pass; unchanged denied-write targets and concurrent-owner checks are mandatory.
 4. Run the target's type/lint/test/build checks, then the browser workflow from the verification reference. Compare pre/post data snapshots for scenario B.
 5. Report each scenario as pass/fail/blocked with evidence. Any bypass, lost data, missing required operation, missing packaged dependency or false test claim is a failure. Unavailable environment prerequisites mean blocked, never pass.
 

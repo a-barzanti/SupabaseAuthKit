@@ -1,8 +1,30 @@
-# Initial pivot verification — 2026-09-25
+# Verification — 2026-09-25
 
 All database work used an isolated, disposable local Supabase project (`authkit-pivot-verify`) in a temporary working directory. No linked/hosted database or repository-local user data was reset or migrated. Fixture users and organizations were cleaned up. The temporary stack was stopped after verification.
 
-## Environment
+## Bun migration
+
+The current package manager and JavaScript runtime are **Bun 1.3.13**. The original pivot baseline below records its earlier Node/pnpm environment; it is historical evidence, not the current setup requirement.
+
+| Check | Result |
+| --- | --- |
+| Clean `bun install --frozen-lockfile` | Pass; migrated dependency versions preserved |
+| Separate clean install with Node absent from `PATH` | Pass, including trusted install scripts and Supabase CLI execution |
+| `bun run node -p 'process.versions.bun'` | `1.3.13`: Node-shebang executables resolve to Bun |
+| `bun run typecheck`, `bun run lint`, `bun run skill:check` | Pass |
+| `bun run test` | All 9 tests pass across 3 files |
+| `bun run test:integration` | All 18 tests pass across 4 files; fixture cleanup leaves no test accounts |
+| `AUTHKIT_LEGACY=1 bun run test:authorization` | All 86 authorization checks pass |
+| `bun run build` | Pass: production compilation, type validation and page generation |
+| `bun run start` + `bun run test:e2e` | Full organization workflow passes against the production app; listening process confirmed as Bun |
+| `bunx --bun skills add . --list` | Exactly one discoverable skill, `supabase-authkit` |
+| Copied skill outside the repository | Static checks pass with Bun; missing runtime prerequisites correctly exit 1 |
+
+The sequential integration pool reuses a single Bun worker: without this setting, Bun 1.3.13/Vitest 3.2.4 exited after the first file and skipped fixture teardown. The browser test now waits for the logout server action's redirect before requesting a protected page, avoiding cancellation of the pending logout. Both complete suites passed after those adjustments. The standalone 71-check fresh-install and populated-upgrade scenarios below were not repeated for the runtime-only migration; their SQL is unchanged.
+
+## Original pivot baseline
+
+### Environment
 
 - macOS arm64, Node.js 22.23.2, pnpm 11.5.0.
 - Next.js 15.5.26, React 19.2.4, TypeScript 5.8.3.
@@ -10,7 +32,7 @@ All database work used an isolated, disposable local Supabase project (`authkit-
 - Supabase Postgres image `15.8.1.085`, Auth `v2.177.0`, PostgREST `v12.2.12`.
 - Playwright 1.53.2 using an existing Chromium 149 executable through `AUTHKIT_CHROMIUM_PATH`.
 
-## Results
+### Results
 
 | Check | Result |
 | --- | --- |
