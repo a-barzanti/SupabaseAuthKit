@@ -103,6 +103,8 @@ try {
   assert.equal(await page.getByText('Private A project', { exact: true }).count(), 0);
   assert.equal(await page.getByLabel('Active organization').inputValue(), orgB);
   await page.getByRole('button', { name: /log\s*out/i }).click();
+  // Let the server action clear the session before testing a new protected request.
+  await page.waitForURL('**/auth/login');
   await page.goto(`${baseURL}/protected`);
   await visible(page.getByRole('button', { name: 'Login', exact: true }));
   console.log(

@@ -6,6 +6,9 @@ export default defineConfig({
     include: ['tests/integration/**/*.{test,spec}.{ts,tsx}'],
     globals: true,
     fileParallelism: false,
+    // Reuse one Bun worker so sequential files and global fixture teardown finish.
+    pool: 'forks',
+    poolOptions: { forks: { singleFork: true } },
     globalSetup: ['./tests/integration/global-setup.ts'],
   },
   resolve: {
